@@ -15,7 +15,7 @@
   "main": "src/server.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemone src/server.js"
+    "dev": "nodemon src/server.js"
   },
   "author": "tahmied",
   "license": "ISC",
