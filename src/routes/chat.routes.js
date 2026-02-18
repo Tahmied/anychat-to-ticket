@@ -1,9 +1,9 @@
 import { Router } from 'express'
-import { captureChat } from '../Controllers/chat.controller.js'
+import { chatStart } from '../Controllers/chat.controller.js'
 
 
 const router = Router()
 
-router.post('/text', captureChat)
+router.post('/text', chatStart)
 
-export default router
+export default router   
