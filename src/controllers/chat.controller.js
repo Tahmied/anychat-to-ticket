@@ -24,7 +24,7 @@ export const getChat = asyncHandler(async (req, res) => {
         })
         const contactDetails = await contactRes.json()
         contactId = contactDetails.data[0].guid;
-        console.log('contact id', contactId);
+        // console.log('contact id', contactId);
     } catch (error) {
         console.log('api hit error ', error);
     }
@@ -40,28 +40,39 @@ export const getChat = asyncHandler(async (req, res) => {
     const chats = await chatsRes.json()
     lastPage = chats.pages;
 
-    const latestChatsRes = await fetch(`https://api.anychat.one/public/v1/chat?page=${lastPage}`, {
-        method: 'GET',
-        headers: {
-            "x-api-key": "d-MTDlHd8Nw_F73iUmyBMesYD03mPeb5lzEOKgg2OWD2zUSga-B6Q0R4Ef-oqLw3",
-        }
-    })
-    const latestChats = await latestChatsRes.json();
+    let currentPage = lastPage;
 
-    // now get the contact id, 
-    // match the contact variable from all latest chats
-    // if not found , go 1 page back and repeat
-    latestChats.data.forEach(chat => {
-        if (chat.contact === contactId) {
-            console.log('match found');
-            targetContact = chat;
+    while (currentPage > 0 && !targetContact) {
+
+        const pageRes = await fetch(
+            `https://api.anychat.one/public/v1/chat?page=${currentPage}`,
+            {
+                method: 'GET',
+                headers: {
+                    "x-api-key": "d-MTDlHd8Nw_F73iUmyBMesYD03mPeb5lzEOKgg2OWD2zUSga-B6Q0R4Ef-oqLw3",
+                }
+            }
+        );
+
+        const pageData = await pageRes.json();
+
+        for (const chat of pageData.data) {
+            if (chat.contact === contactId) {
+                targetContact = chat;
+                break;
+            }
         }
-        if (!chat.contact === contactId) {
-            console.log('go to previous page and repeat')
-        }
-    });
+
+        currentPage--;
+    }
+
+
     console.log(targetContact.guid);
+    if (!targetContact) {
+        throw new ApiError(404, 'No chat found');
+    }
     let targetChatId = targetContact.guid;
+
     // find the target chat transcript
     let chatTranscriptRes = await fetch(`https://api.anychat.one/public/v1/chat/${targetChatId}/message`, {
         method: 'GET',
@@ -73,16 +84,37 @@ export const getChat = asyncHandler(async (req, res) => {
     // console.log(chatTranscript);
     // store all chats data in a variable
     let fullChatTranscript = [];
-    chatTranscript.data.forEach((chat) => {
-        fullChatTranscript.push(chat)
-    })
+    let transcriptCurrentPage = chatTranscript.pages;
 
-    console.log('chattr-', fullChatTranscript);
+    // Loop through transcript pages backwards
+    while (transcriptCurrentPage > 0) {
+
+        const transcriptPageRes = await fetch(
+            `https://api.anychat.one/public/v1/chat/${targetChatId}/message?page=${transcriptCurrentPage}`,
+            {
+                method: 'GET',
+                headers: {
+                    "x-api-key": "d-MTDlHd8Nw_F73iUmyBMesYD03mPeb5lzEOKgg2OWD2zUSga-B6Q0R4Ef-oqLw3",
+                },
+            }
+        );
+
+        const transcriptPageData = await transcriptPageRes.json();
+        fullChatTranscript.push(...transcriptPageData.data);
+
+        transcriptCurrentPage--;
+    }
+    fullChatTranscript.sort((a, b) => a.created_at - b.created_at);
+
+
+
+    // console.log('chattr-', fullChatTranscript);
     // look through the chat a
 
     const resData = {
         // contactId :  contactId,
-        chats: fullChatTranscript
+        chats: fullChatTranscript,
+        messages: fullChatTranscript.length
     };
 
     return res.status(200).json(
