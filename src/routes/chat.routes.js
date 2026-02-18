@@ -4,6 +4,6 @@ import { captureChat } from '../Controllers/chat.controller.js'
 
 const router = Router()
 
-router.get('/text', captureChat)
+router.post('/text', captureChat)
 
 export default router

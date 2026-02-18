@@ -6,5 +6,5 @@ dotenv.config({
 })
 
 app.listen(process.env.PORT || 2000, () => {
-    console.log(`server is running on http://localhost:${process.env.port || 2000}`);
+    console.log(`server is running on http://localhost:${process.env.PORT}`);
 })
