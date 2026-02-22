@@ -11,8 +11,8 @@ app.use(cookieParser())
 app.use(express.static('public'))
 
 // routes
-import charRoutes from './routes/chat.routes.js'
+import installationRoutes from './routes/installation.routes.js'
 
-app.use('/api/v1/getchat', charRoutes)
+app.use('/api/v1/insatllation', installationRoutes)
 
 export { app }
